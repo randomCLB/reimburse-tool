@@ -3,62 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>报销材料生成器</title>
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<title>报销材料生成器（本地版）</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#eef2f7;min-height:100vh}
-.container{max-width:680px;margin:0 auto;padding:20px 16px 60px}
-h1{text-align:center;font-size:24px;color:#1a3a5c;padding:20px 0 6px}
-.subtitle{text-align:center;font-size:13px;color:#888;margin-bottom:18px}
-.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px 18px;margin-bottom:14px}
-.section-title{font-size:13px;font-weight:700;color:#fff;background:#1a3a5c;padding:6px 12px;border-radius:6px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+body{font-family:"Microsoft YaHei",sans-serif;background:#eef2f7;min-height:100vh}
+.container{max-width:640px;margin:0 auto;padding:16px 12px 60px}
+h1{text-align:center;font-size:22px;color:#1a3a5c;padding:16px 0 4px}
+.sub{text-align:center;font-size:12px;color:#999;margin-bottom:14px}
+.note{background:#fffde7;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;font-size:12px;color:#888;margin-bottom:12px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:16px 14px;margin-bottom:10px}
+.sec{font-size:12px;font-weight:700;color:#fff;background:#1a3a5c;padding:5px 10px;border-radius:5px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
 .full{grid-column:1/-1}
-label{display:block;font-size:12px;color:#555;margin-bottom:4px}
+label{display:block;font-size:11px;color:#666;margin-bottom:3px}
 label span{color:#e53e3e}
-input,select,textarea{padding:9px 12px;border:1.5px solid #cdd5e3;border-radius:7px;font-size:13px;font-family:inherit;width:100%;background:#fafbfc;outline:none;transition:border .2s}
-input:focus,select:focus,textarea:focus{border-color:#1a3a5c;background:#fff}
-textarea{min-height:60px;resize:vertical}
-.btn{background:#1a3a5c;color:#fff;border:none;padding:14px 32px;font-size:15px;font-weight:700;border-radius:40px;cursor:pointer;display:block;width:100%;font-family:inherit;transition:opacity .2s}
-.btn:hover{opacity:.85}
-.btn:disabled{background:#999;cursor:not-allowed}
-.result{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:16px;margin-top:16px;font-size:13px;color:#2e7d32;display:none}
-.result.show{display:block}
-.error-box{background:#ffebee;border:1px solid #ef9a9a;border-radius:10px;padding:16px;margin-top:16px;font-size:13px;color:#c62828;display:none}
-.error-box.show{display:block}
-.files{list-style:none;margin-top:10px}
-.files li{padding:4px 0;border-bottom:1px solid #f0f0f0}
-.files li:last-child{border:none}
-.note{background:#fffde7;border:1px solid #fff59d;border-radius:8px;padding:10px 14px;font-size:11px;color:#888;margin-bottom:14px}
-.radio-group{display:flex;gap:16px;padding:6px 0}
-.radio-group label{display:flex;align-items:center;gap:4px;font-weight:400;cursor:pointer;font-size:13px}
+input,textarea,select{padding:8px 10px;border:1.5px solid #cdd5e3;border-radius:6px;font-size:13px;font-family:inherit;width:100%;background:#fafbfc;outline:none}
+input:focus,textarea:focus{border-color:#1a3a5c;background:#fff}
+textarea{min-height:56px;resize:vertical}
+.radio-group{display:flex;gap:12px;padding:4px 0}
+.radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer}
 .radio-group input{width:auto}
-#loading{display:none;text-align:center;padding:20px;font-size:14px;color:#666}
-#loading.show{display:block}
+.btn{background:#1a3a5c;color:#fff;border:none;padding:13px 24px;font-size:15px;font-weight:700;border-radius:40px;cursor:pointer;width:100%;margin-top:14px;font-family:inherit}
+.btn:hover{background:#2a5a8c}
+.btn:disabled{background:#aaa;cursor:not-allowed}
+.msg{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:14px;margin-top:14px;font-size:13px;color:#2e7d32;display:none}
+.msg.show{display:block}
+.err{background:#ffebee;border:1px solid #ef9a9a;border-radius:10px;padding:14px;margin-top:14px;font-size:13px;color:#c62828;display:none}
+.err.show{display:block}
+.info{font-size:11px;color:#888;margin-top:8px;text-align:center}
 </style>
 </head>
 <body>
 <div class="container">
   <h1>📋 报销材料生成器</h1>
-  <p class="subtitle">填一次信息 → 生成 4 份报销文档</p>
-
-  <div class="note" id="loadStatus">⚠️ 正在加载组件，请稍候...</div>
+  <p class="sub">填一次信息 → 生成 4 份 DOCX 文件</p>
+  <div class="note">💡 纯本地运行，无需网络。文件直接在浏览器生成并下载。</div>
 
   <div class="card">
-    <div class="section-title">👤 通用信息</div>
+    <div class="sec">👤 通用信息</div>
     <div class="grid">
-      <div class="full"><label>姓名 <span>*</span></label><input id="name" placeholder="如：潘骅" required></div>
+      <div class="full"><label>姓名 <span>*</span></label><input id="name" placeholder="如：潘骅"></div>
       <div class="full"><label>部门 <span>*</span></label><input id="dept" placeholder="如：招商发展部"></div>
       <div class="full"><label>申请日期 <span>*</span></label><input type="date" id="date"></div>
-      <div class="full"><label>出差事由 <span>*</span></label><input id="reason" placeholder="如：商务接待"></div>
+      <div class="full"><label>出差事由 <span>*</span></label><input id="reason" placeholder="如：商务考察"></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="section-title">🚄 差旅信息</div>
+    <div class="sec">🚄 差旅信息</div>
     <div class="grid">
-      <div class="full"><label>出差地点</label><input id="destination" placeholder="如：南京"></div>
+      <div class="full"><label>出差地点</label><input id="dest" placeholder="如：南京"></div>
       <div><label>随行人数</label><input id="participants" placeholder="如：3"></div>
       <div><label>出差天数</label><input id="days" placeholder="如：2"></div>
       <div><label>出发日期</label><input type="date" id="start_date"></div>
@@ -67,22 +61,22 @@ textarea{min-height:60px;resize:vertical}
   </div>
 
   <div class="card">
-    <div class="section-title">💰 费用信息</div>
+    <div class="sec">💰 费用信息</div>
     <div class="grid">
-      <div class="full"><label>费用内容说明</label><textarea id="amount_detail" placeholder="如：2025.6.15招待南京医药集团领导，地点：南京金陵饭店，共5人"></textarea></div>
+      <div class="full"><label>费用内容说明</label><textarea id="detail" placeholder="如：2025.6.15招待南京医药集团领导，地点：南京金陵饭店，共5人"></textarea></div>
       <div><label>金额（元）</label><input id="amount" placeholder="如：1362"></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="section-title">🤝 接待审批</div>
+    <div class="sec">🤝 接待审批</div>
     <div class="grid">
-      <div class="full"><label>来客单位</label><input id="guest_unit" placeholder="如：南京医药集团"></div>
+      <div class="full"><label>来客单位</label><input id="guest" placeholder="如：南京医药集团"></div>
       <div><label>来客人数</label><input id="guest_count" placeholder="如：5"></div>
       <div><label>来访日期</label><input type="date" id="visit_date"></div>
       <div class="full"><label>陪同人员</label><input id="escort" placeholder="如：李百军、潘骅"></div>
       <div class="full"><label>就餐地点</label><input id="venue" placeholder="如：江南艺库（圆融店）"></div>
-      <div><label>人均标准（元）</label><input id="budget" placeholder="如：150"></div>
+      <div><label>人均标准</label><input id="budget" placeholder="如：150"></div>
       <div class="full">
         <label>接待类别</label>
         <div class="radio-group">
@@ -94,343 +88,492 @@ textarea{min-height:60px;resize:vertical}
     </div>
   </div>
 
-  <button class="btn" id="generateBtn" onclick="generateDocs()" disabled>🚀 生成 4 份报销文档（加载中...）</button>
-
-  <div id="loading">⏳ 正在生成文档，请稍候...</div>
-
-  <div class="result" id="result">
-    <strong>✅ 生成完成！共 4 个文件已下载。</strong>
-    <ul class="files">
-      <li>📄 01出差审批表.docx</li>
-      <li>📄 02费用报销单.docx</li>
-      <li>📄 03费用报销单.docx</li>
-      <li>📄 04商务接待审批表.docx</li>
-    </ul>
-    <p style="margin-top:10px;font-size:12px;color:#666">如果浏览器没有自动下载，点击上面每个文件链接手动保存。</p>
-  </div>
-
-  <div class="error-box" id="errorMsg"></div>
+  <button class="btn" id="btn" onclick="gen()">🚀 生成 4 份报销文档</button>
+  <div class="msg" id="msg"><strong>✅ 生成完成！</strong><br>4 个 DOCX 文件已自动下载。</div>
+  <div class="err" id="err"></div>
+  <p class="info">用 Microsoft Word 打开生成的 DOCX 文件</p>
 </div>
 
 <script>
-window.addEventListener("DOMContentLoaded", function() {
-  if (typeof docx === "undefined") {
-    document.getElementById("loadStatus").textContent = "❌ 组件加载失败，请检查网络后刷新页面重试";
-    return;
+// ══════════════════════════════════════════════
+//  DOCX 生成器（无依赖，纯 JS 实现）
+// ══════════════════════════════════════════════
+var J = {}; // docx builder namespace
+
+// 简单 XML 构建
+J.xml = function(tag, attrs, children) {
+  var s = "<" + tag;
+  for (var k in attrs) s += " " + k + '="' + J.esc(attrs[k]) + '"';
+  if (children === "" || children === null || children === undefined) {
+    s += "/>";
+  } else {
+    s += ">" + children + "</" + tag + ">";
   }
-  document.getElementById("loadStatus").style.display = "none";
-  document.getElementById("generateBtn").disabled = false;
-  document.getElementById("generateBtn").textContent = "🚀 生成 4 份报销文档";
-  // 设置默认日期
-  const today = new Date().toISOString().split("T")[0];
-  ["date","start_date","end_date","visit_date"].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.value = today;
-  });
-});
+  return s;
+};
+J.esc = function(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+};
 
-// 等待 docx 加载
-var checkLoaded = setInterval(function() {
-  if (typeof docx !== "undefined") {
-    clearInterval(checkLoaded);
-    initApp();
-  }
-}, 200);
-setTimeout(function() { clearInterval(checkLoaded); }, 15000);
-
-function initApp() {
-  // 已初始化
+// 日期格式化
+function fd(s, fmt) {
+  if (!s) { var d = new Date(); } else { var d = new Date(s); if (isNaN(d)) d = new Date(); }
+  var y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
+  if (fmt === "short") return y + "." + String(m).padStart(2,"0") + "." + String(day).padStart(2,"0");
+  return y + "年" + m + "月" + day + "日";
 }
 
-var docxLoaded = false;
-function checkDocx() {
-  if (typeof docx === "undefined" || typeof docx.Document === "undefined") {
-    alert("组件未加载完成，请等待或刷新页面");
-    return false;
-  }
-  return true;
-}
-
-var D = docx;
-var Document = D.Document, Packer = D.Packer, Paragraph = D.Paragraph;
-var TextRun = D.TextRun, Table = D.Table, TableRow = D.TableRow;
-var TableCell = D.TableCell, WidthType = D.WidthType, BorderStyle = D.BorderStyle;
-var AlignmentType = D.AlignmentType, ShadingType = D.ShadingType;
-var TableLayoutType = D.TableLayoutType;
-
-// ─────────────────────────────────────────
-// 工具函数
-// ─────────────────────────────────────────
-function fmtDate(dateStr) {
-  if (!dateStr) { var d = new Date(); return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日"; }
-  var d = new Date(dateStr); if (isNaN(d)) return dateStr;
-  return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日";
-}
-function fmtDateShort(dateStr) {
-  if (!dateStr) { var d = new Date(); return d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0"); }
-  var d = new Date(dateStr); if (isNaN(d)) return dateStr;
-  return d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0");
-}
-
-function amountCn(amount) {
-  if (!amount) return "";
-  var n = parseFloat(amount);
-  if (isNaN(n) || n === 0) return "零元整";
+// 金额中文大写
+function acn(n) {
+  n = parseFloat(n) || 0;
   var CN = "零壹贰叁肆伍陆柒捌玖";
-  var intPart = Math.floor(n);
-  var dec1 = Math.floor((n * 10) % 10);
-  var dec2 = Math.round((n * 100) % 10);
-  var units = ["","万","千","百","十"];
-  var intStr = String(intPart);
-  var result = "";
-  for (var i = 0; i < intStr.length; i++) {
-    var digit = parseInt(intStr[i]);
-    var pos = intStr.length - i - 1;
-    if (digit === 0) {
-      if (pos === 4 && result.length > 0) result += "万";
-      if (!result.endsWith("零") && i < intStr.length - 1) result += "零";
-    } else {
-      if (pos >= 1 && pos <= 4) result += units[pos];
-      result += CN[digit];
-    }
+  var ip = Math.floor(n), dp = Math.round((n-ip)*100);
+  var is = String(ip), rs = "";
+  for (var i=0; i<is.length; i++) {
+    var d = parseInt(is[i]), p = is.length-i-1;
+    if (d===0) { if (p===4&&rs) rs+="万"; else if (!rs.endsWith("零")&&i<is.length-1) rs+="零"; }
+    else { if (p>=1&&p<=4) rs+=["","万","千","百","十"][p]; rs+=CN[d]; }
   }
-  result = result.replace(/零+/g,"零").replace(/零(万|千|百|十)/g,"$1").replace(/零$/,"");
-  if (dec1 === 0 && dec2 === 0) return result + "元整";
-  if (dec2 === 0) return result + "元" + CN[dec1] + "角";
-  return result + "元" + CN[dec1] + "角" + CN[dec2] + "分";
+  rs = rs.replace(/零+/g,"零").replace(/零(万|千|百|十)/g,"$1").replace(/零$/,"");
+  if (dp===0) return rs+"元整";
+  return rs+"元"+CN[Math.floor(dp/10)]+"角"+CN[dp%10]+"分";
 }
 
-var BORDER = { style: BorderStyle.SINGLE, size: 1, color: "999999" };
-var NO_BORDER = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
-var CP = { borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER } };
-
-function hc(text) {
-  return new TableCell({
-    width: { size: 1400, type: WidthType.DXA },
-    shading: { fill: "1a3a5c", type: ShadingType.CLEAR, color: "1a3a5c" },
-    ...CP,
-    children: [new Paragraph({ children: [new TextRun({ text: text, bold: true, color: "FFFFFF", size: 18, font: "SimSun" })], alignment: AlignmentType.CENTER })]
-  });
-}
-function vc(text, w, bold) {
-  return new TableCell({
-    width: { size: w || 1400, type: WidthType.DXA },
-    ...CP,
-    children: [new Paragraph({ children: [new TextRun({ text: String(text||""), bold: !!bold, size: 18, font: "SimSun" })], alignment: AlignmentType.LEFT })]
-  });
-}
-function lc(text, w) {
-  return new TableCell({
-    width: { size: w || 1400, type: WidthType.DXA },
-    shading: { fill: "F0F4F8", type: ShadingType.CLEAR, color: "F0F4F8" },
-    ...CP,
-    children: [new Paragraph({ children: [new TextRun({ text: text, size: 18, font: "SimSun" })], alignment: AlignmentType.CENTER })]
-  });
-}
-function lp(text) {
-  return new Paragraph({ children: [new TextRun({ text: text, size: 18, font: "SimSun" })] });
-}
-function tp(text) {
-  return new Paragraph({ children: [new TextRun({ text: text, bold: true, size: 22, font: "SimHei", color: "1a3a5c" })], alignment: AlignmentType.CENTER, spacing: { before: 100, after: 100 } });
-}
-function pp(text, size, color) {
-  return new Paragraph({ children: [new TextRun({ text: text, size: size||18, font: "SimSun", color: color||"333" })] });
-}
-function spanCell(text, cols, w) {
-  return new TableCell({
-    columnSpan: cols,
-    width: { size: w || 1000, type: WidthType.DXA },
-    ...CP,
-    children: [new Paragraph({ children: [new TextRun({ text: text, size: 18, font: "SimSun" })] })]
-  });
+// 单元格
+function tc(text, opts) {
+  opts = opts||{};
+  var w = opts.w||1000, cs = opts.cs||1, shade = opts.shade||null, bold = !!opts.bold;
+  var tcPr = '<w:tcPr>'+(w?'<w:tcW w:w="'+w+'" w:type="dxa"/>':'')+(cs>1?'<w:gridSpan w:val="'+cs+'"/>':'');
+  if (shade) tcPr += '<w:shd w:val="clear" w:color="auto" w:fill="'+shade+'"/>';
+  tcPr += '</w:tcPr>';
+  var rPr = bold?'<w:rPr><w:rFonts w:eastAsia="SimHei"/><w:b/></w:rPr>':'<w:rPr><w:rFonts w:eastAsia="SimSun"/></w:rPr>';
+  var txt = text==null||text===undefined?"":String(text);
+  var lines = txt.split("\n");
+  var children = lines.map(function(line, i) {
+    return '<w:p><w:pPr>'+rPr+'</w:pPr><w:r><w:rPr>'+rPr+'</w:rPr><w:t xml:space="preserve">'+J.esc(line)+'</w:t></w:r></w:p>';
+  }).join("");
+  return '<w:tc>'+tcPr+children+'</w:tc>';
 }
 
-// ─────────────────────────────────────────
-// 01 出差审批表
-// ─────────────────────────────────────────
-function make01(d) {
-  var name = d.name||"", dept = d.dept||"", date = fmtDate(d.date);
-  var dest = d.destination||"", reason = d.reason||"";
-  var participants = d.participants||"", days = d.days||"";
-  var startD = fmtDateShort(d.start_date), endD = fmtDateShort(d.end_date);
-
-  var tbl = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({ children: [new TableCell({ columnSpan: 7, ...CP, shading: { fill: "1a3a5c", type: ShadingType.CLEAR }, children: [tp("太仓市生物医药产业园有限公司 出差审批表")] })] }),
-      new TableRow({ children: [new TableCell({ columnSpan: 7, ...CP, children: [pp("申请日期：" + date, 18)] })] }),
-      new TableRow({ children: [lc("申请部门"), vc(dept,1200), vc("",800), lc("申请人"), vc(name,1200), lc("参与人数"), vc(participants,800)] }),
-      new TableRow({ children: [lc("出差地点"), vc(dest,1200), vc("",800), lc("出差日期"), vc("自 "+startD,800), vc("至 "+endD,800), lc("共 天"), vc(days,800)] }),
-      new TableRow({ children: [lc("交通类型"), spanCell("□自备车  □公共交通（公路、铁路、航空）", 6), vc("",800)] }),
-      new TableRow({ children: [lc("出差事由"), spanCell(reason, 6), vc("",800)] }),
-      new TableRow({ children: [lc("部门审核"), vc("",2400), lc("领导审批"), vc("",2400), vc("",400), vc("",400), vc("",400)] }),
-    ]
-  });
-
-  return new Document({ sections: [{ children: [tbl, new Paragraph({}), pp("经办人："+name+"    部门负责人：    财务审核：    领导审批：", 16, "888")] }] });
+// 表格行
+function tr(cells) {
+  return '<w:tr>'+cells.join('')+'</w:tr>';
 }
 
-// ─────────────────────────────────────────
-// 02/03 费用报销单
-// ─────────────────────────────────────────
-function make02(d) {
-  var name=d.name||"", dept=d.dept||"", date=fmtDate(d.date);
-  var detail=d.amount_detail||"", amount=d.amount||"";
-  var cnAmt = amountCn(amount);
-  var amtStr = amount ? parseFloat(amount).toFixed(2) : "0.00";
+// 生成 [内容说明] 行的金额格
+function amtCells(n) {
+  var parts = (parseFloat(n)||0).toFixed(2).replace(".","").padEnd(7,"0").split("");
+  return parts.map(function(v){ return tc(v==="0"?"":v,{w:600}); });
+}
+
+// 主函数：构建 docx 文件的 XML（.docx = zip）
+function buildDocx(bodyXml) {
+  // [Content_Types].xml
+  var ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
+    '</Types>';
+
+  // _rels/.rels
+  var rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'+
+    '</Relationships>';
+
+  // word/_rels/document.xml.rels
+  var docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '</Relationships>';
+
+  // word/document.xml
+  var sectPr = '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>';
+  var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"'+
+    ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'+
+    ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+    '<w:body>'+bodyXml+sectPr+'</w:body></w:document>';
+
+  return [ct, rels, docRels, docXml];
+}
+
+function zip(files) {
+  var parts = [];
+  var offsets = [];
+  var central = [];
+  var offset = 0;
+  for (var i=0; i<files.length; i++) {
+    var name = files[i].name, data = files[i].data;
+    offsets.push(offset);
+    var entry = J.zipEntry(name, data);
+    parts.push(entry);
+    offset += entry.length;
+    // central directory
+    central.push(J.zipCentral(name, entry.length, offsets[i]));
+  }
+  var cdOffset = offset;
+  var cd = central.join('');
+  var cdEnd = J.zipEnd(cd.length, offset);
+  var all = parts.join('') + cd + cdEnd;
+  // Convert to ArrayBuffer
+  var buf = new ArrayBuffer(all.length);
+  var view = new Uint8Array(buf);
+  for (var i=0; i<all.length; i++) view[i] = all.charCodeAt(i);
+  return buf;
+}
+
+J.zipEntry = function(name, data) {
+  var nameBytes = unescape(encodeURIComponent(name));
+  var dataBytes = data;
+  var header = [
+    J.pack("I", 0x04034b50),
+    J.pack("v", 20), // version needed
+    J.pack("v", 0), // flags
+    J.pack("v", 0), // compression (stored)
+    J.pack("v", 0), // mod time
+    J.pack("v", 0), // mod date
+    J.pack("I", 0), // crc32 (0 for now)
+    J.pack("I", dataBytes.length),
+    J.pack("I", dataBytes.length),
+    J.pack("v", nameBytes.length),
+    J.pack("v", 0), // extra field
+  ].join('');
+  var crc = J.crc32(dataBytes);
+  header = [
+    J.pack("I", 0x04034b50),
+    J.pack("v", 20),
+    J.pack("v", 0),
+    J.pack("v", 0),
+    J.pack("v", 0),
+    J.pack("v", 0),
+    J.pack("I", crc),
+    J.pack("I", dataBytes.length),
+    J.pack("I", dataBytes.length),
+    J.pack("v", nameBytes.length),
+    J.pack("v", 0),
+  ].join('');
+  return header + nameBytes + dataBytes;
+};
+
+J.zipCentral = function(name, len, offset) {
+  var nameBytes = unescape(encodeURIComponent(name));
+  return [
+    J.pack("I", 0x02014b50),
+    J.pack("v", 20), // version made by
+    J.pack("v", 20), // version needed
+    J.pack("v", 0), // flags
+    J.pack("v", 0), // compression
+    J.pack("v", 0), // mod time
+    J.pack("v", 0), // mod date
+    J.pack("I", 0), // crc
+    J.pack("I", len), // compressed size
+    J.pack("I", len), // uncompressed size
+    J.pack("v", nameBytes.length),
+    J.pack("v", 0), // extra field
+    J.pack("v", 0), // comment
+    J.pack("v", 0), // disk start
+    J.pack("v", 0), // attr
+    J.pack("I", 0), // offset
+  ].join('') + nameBytes;
+};
+
+J.zipEnd = function(cdLen, cdOffset) {
+  return [
+    J.pack("I", 0x06054b50),
+    J.pack("v", 0), // disk
+    J.pack("v", 0), // cd disk
+    J.pack("v", 1), // entries on disk
+    J.pack("v", 1), // total entries
+    J.pack("I", cdLen),
+    J.pack("I", cdOffset),
+    J.pack("v", 0), // comment len
+  ].join('');
+};
+
+J.pack = function(type, val) {
+  if (type === "I") {
+    return String.fromCharCode(val&0xff, (val>>8)&0xff, (val>>16)&0xff, (val>>24)&0xff);
+  } else if (type === "v") {
+    return String.fromCharCode(val&0xff, (val>>8)&0xff);
+  }
+  return "";
+};
+
+J.crc32 = function(data) {
+  var table = [];
+  for (var i=0; i<256; i++) {
+    var c = i;
+    for (var j=0; j<8; j++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1);
+    table[i] = c;
+  }
+  var crc = 0xffffffff;
+  for (var i=0; i<data.length; i++) crc = table[(crc ^ data.charCodeAt(i)) & 0xff] ^ (crc>>>8);
+  return (crc ^ 0xffffffff)>>>0;
+};
+
+function download(buf, filename) {
+  var blob = new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+// ══════════════════════════════════════════════
+//  四个表单的 XML 构建函数
+// ══════════════════════════════════════════════
+
+// 表1：出差审批表
+function build01(d) {
+  var rows = [];
+  // 标题
+  rows.push(tr([
+    tc("太仓市生物医药产业园有限公司 出差审批表", {w:14400, cs:7, shade:"1a3a5c", bold:true})
+  ]));
+  // 申请日期
+  rows.push(tr([tc("申请日期："+fd(d.date), {w:14400, cs:7})]));
+  // 申请部门 + 申请人 + 参与人数
+  rows.push(tr([
+    tc("申请部门",{w:1800,shade:"F0F4F8"}), tc(d.dept,{w:3000,cs:5}),
+    tc("申请人",{w:1400,shade:"F0F4F8"}), tc(d.name,{w:2800,cs:3}),
+    tc("参与人数",{w:1400,shade:"F0F4F8"}), tc(d.participants||"",{w:1000})
+  ]));
+  // 出差地点 + 日期
+  rows.push(tr([
+    tc("出差地点",{w:1800,shade:"F0F4F8"}), tc(d.dest||"",{w:3000,cs:5}),
+    tc("出差日期",{w:1400,shade:"F0F4F8"}),
+    tc("自 "+fd(d.start_date,"short"),{w:1600}), tc("至 "+fd(d.end_date,"short"),{w:1600}),
+    tc("共 天",{w:1000,shade:"F0F4F8"}), tc(d.days||"",{w:1000})
+  ]));
+  // 交通类型
+  rows.push(tr([
+    tc("交通类型",{w:1800,shade:"F0F4F8"}),
+    tc("□自备车  □公共交通（公路、铁路、航空）",{w:12600,cs:6})
+  ]));
+  // 出差事由
+  rows.push(tr([
+    tc("出差事由",{w:1800,shade:"F0F4F8"}),
+    tc(d.reason||"",{w:12600,cs:6})
+  ]));
+  // 部门审核
+  rows.push(tr([
+    tc("部门审核",{w:1800,shade:"F0F4F8"}), tc("",{w:4000,cs:4}),
+    tc("领导审批",{w:1400,shade:"F0F4F8"}), tc("",{w:7200,cs:6})
+  ]));
+
+  var tableXml = '<w:tbl><w:tblPr><w:tblW w:w="14400" w:type="dxa"/>'+
+    '<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:left w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:right w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '</w:tblBorders></w:tblPr>'+rows.join('')+'</w:tbl>';
+
+  var para = function(t, size, bold, color, align, before, after) {
+    var sz = size||18, clr = color||"333333", al = align||"left", bf = bold?"<w:b/>":"", bef = before||0, aft = after||0;
+    return '<w:p><w:pPr><w:jc w:val="'+al+'"/><w:spacing w:before="'+bef+'" w:after="'+aft+'"/>'+
+      '<w:rPr><w:rFonts w:eastAsia="SimHei"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+clr+'"/></w:rPr></w:pPr>'+
+      '<w:r><w:rPr><w:rFonts w:eastAsia="SimHei"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+clr+'"/>'+bf+'</w:rPr>'+
+      '<w:t xml:space="preserve">'+J.esc(t)+'</w:t></w:r></w:p>';
+  };
+
+  return buildDocx(
+    tableXml +
+    '<w:p/>'+
+    para("经办人："+d.name+"    部门负责人：    财务审核：    领导审批：", 16, false, "888888")
+  );
+}
+
+// 表2/3：费用报销单
+function build02(d) {
+  var amt = parseFloat(d.amount)||0;
+  var amtStr = amt.toFixed(2);
   var parts = amtStr.replace(".","").padEnd(7,"0").split("");
 
-  var tbl = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({ children: [lc("姓名",800), vc(name,1400), lc("部门",800), vc(dept,2400), spanCell("附件数",3,2400), vc("",800), vc("",800)] }),
-      new TableRow({ children: [lc("费用项目",800), spanCell("内容说明",3,2400), lc("金额",600), vc("万"), vc("千"), vc("百"), vc("十"), vc("元"), vc("角"), vc("分")] }),
-      new TableRow({ children: [vc("业务招待",800), spanCell(detail,3,2400), vc(parts[0]), vc(parts[1]), vc(parts[2]), vc(parts[3]), vc(parts[4]), vc(parts[5]), vc(parts[6])] }),
-      new TableRow({ children: [vc("",800), spanCell("",3,2400), vc(""), vc(""), vc(""), vc(""), vc(""), vc(""), vc("")] }),
-      new TableRow({ children: [lc("合计金额"), spanCell(cnAmt,3,2400), vc(""), vc(""), vc(""), vc(""), vc(""), vc(""), vc("")] }),
-    ]
-  });
+  var amtRow = [
+    tc("业务招待",{w:1000}),
+    tc(d.detail||"",{w:3200,cs:3}),
+    tc(parts[0]==="0"?"":parts[0],{w:600}),
+    tc(parts[1]==="0"?"":parts[1],{w:600}),
+    tc(parts[2]==="0"?"":parts[2],{w:600}),
+    tc(parts[3]==="0"?"":parts[3],{w:600}),
+    tc(parts[4]==="0"?"":parts[4],{w:600}),
+    tc(parts[5]==="0"?"":parts[5],{w:600}),
+    tc(parts[6]==="0"?"":parts[6],{w:600}),
+  ];
 
-  return new Document({ sections: [{
-    children: [
-      pp("太仓市生物医药产业园有限公司", 22, "1a3a5c"),
-      tp("费用审批单"),
-      tbl,
-      new Paragraph({}),
-      pp("费用收款单位/人："+name+"    填报日期："+date, 16),
-      pp("报销人："+name+"    部门负责人：    财务审核：    领导审批：", 16),
-      new Paragraph({}),
-      pp("备注：10万元（含）以上费用报销使用《公司大额付款申请单》。", 14, "999"),
-    ]
-  }] });
+  var blankRow = [
+    tc("",{w:1000}), tc("",{w:3200,cs:3}),
+    tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600})
+  ];
+
+  var rows = [
+    tr([tc("姓名",{w:800,shade:"F0F4F8"}), tc(d.name,{w:1400}), tc("部门",{w:800,shade:"F0F4F8"}), tc(d.dept,{w:2400,cs:3}), tc("附件数",{w:1000,cs:4}), tc("",{w:2800})]),
+    tr([tc("费用项目",{w:800,shade:"F0F4F8"}), tc("内容说明",{w:3200,cs:3,shade:"F0F4F8"}), tc("金额",{w:1000,shade:"F0F4F8"}), tc("万",{w:600,shade:"F0F4F8"}), tc("千",{w:600,shade:"F0F4F8"}), tc("百",{w:600,shade:"F0F4F8"}), tc("十",{w:600,shade:"F0F4F8"}), tc("元",{w:600,shade:"F0F4F8"}), tc("角",{w:600,shade:"F0F4F8"}), tc("分",{w:600,shade:"F0F4F8"})]),
+    tr(amtRow),
+    tr(blankRow),
+    tr([tc("合计金额",{w:800,shade:"F0F4F8"}), tc(acn(amt),{w:3200,cs:3}), tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600}),tc("",{w:600})]),
+  ];
+
+  var tableXml = '<w:tbl><w:tblPr><w:tblW w:w="14400" w:type="dxa"/>'+
+    '<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:left w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:right w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="999999"/>'+
+    '</w:tblBorders></w:tblPr>'+rows.join('')+'</w:tbl>';
+
+  var para = function(t, size, bold, color) {
+    var sz=size||18, clr=color||"333333";
+    return '<w:p><w:pPr><w:rPr><w:rFonts w:eastAsia="SimHei"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+clr+'"/>'+(bold?"<w:b/>":"")+'</w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="SimHei"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+clr+'"/>'+(bold?"<w:b/>":"")+'</w:rPr><w:t xml:space="preserve">'+J.esc(t)+'</w:t></w:r></w:p>';
+  };
+
+  return buildDocx(
+    para("太仓市生物医药产业园有限公司", 22, true, "1a3a5c") +
+    para("费用审批单", 22, true, "1a3a5c") +
+    tableXml +
+    '<w:p/>'+
+    para("费用收款单位/人："+d.name+"    填报日期："+fd(d.date), 16, false, "444444") +
+    para("报销人："+d.name+"    部门负责人：    财务审核：    领导审批：", 16, false, "444444") +
+    '<w:p/>'+
+    para("备注：10万元（含）以上费用报销使用《公司大额付款申请单》。", 14, false, "999999")
+  );
 }
 
-// ─────────────────────────────────────────
-// 04 商务接待审批表
-// ─────────────────────────────────────────
-function make04(d) {
-  var name=d.name||"", date=fmtDate(d.date);
-  var guest=d.guest_unit||"", guestCount=d.guest_count||"";
-  var visitDate=fmtDateShort(d.visit_date);
-  var reason=d.reason||"", escort=d.escort||"";
-  var venue=d.venue||"", budget=d.budget||"";
-  var meal=d.meal||"晚餐";
+// 表4：商务接待审批表
+function build04(d) {
   var mealMap = {"早餐":"☑早餐  □午餐  □晚餐","午餐":"□早餐  ☑午餐  □晚餐","晚餐":"□早餐  □午餐  ☑晚餐"};
+  var meal = mealMap[d.meal]||mealMap["晚餐"];
 
-  var t0 = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({ children: [lc("来客单位",1000), vc(guest,2400), lc("来访时间",1000), vc(visitDate,1600), lc("来客人数",1000), vc(guestCount,1400)] }),
-      new TableRow({ children: [lc("来访事由",1000), spanCell(reason, 5, 6400), vc("",800)] }),
-      new TableRow({ children: [lc("接待单位",1000), vc("太仓市生物医药产业园有限公司",2400), lc("陪同人员",1000), spanCell(escort, 3, 4000)] }),
-      new TableRow({ children: [lc("接待类别",1000), spanCell(mealMap[meal]||mealMap["晚餐"], 3, 2400), lc("接待标准",1000), vc(budget+"元/人",800), vc("",800)] }),
-      new TableRow({ children: [lc("其他事项",1000), spanCell("", 5, 6400), vc("",800)] }),
-    ]
-  });
+  var para = function(t, size, bold, color, before, after) {
+    var sz=size||18, clr=color||"333333", bef=before||0, aft=after||0;
+    return '<w:p><w:pPr><w:spacing w:before="'+bef+'" w:after="'+aft+'"/><w:rPr><w:rFonts w:eastAsia="SimHei"/>'+
+      '<w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+clr+'"/>'+(bold?"<w:b/>":"")+
+      '</w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="SimHei"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+clr+'"/>'+(bold?"<w:b/>":"")+'</w:rPr><w:t xml:space="preserve">'+J.esc(t)+'</w:t></w:r></w:p>';
+  };
 
-  var t1 = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({ children: [lc("负责接待单位（单位盖章）",1600), vc("太仓市生物医药产业园有限公司",1600), lc("陪同人员",1000), vc(escort+" 人",1200), vc("",1200), vc("",1200)] }),
-      new TableRow({ children: [lc("来访单位",1600), vc(guest,1600), lc("来访人数",1000), vc(guestCount+" 人",1200), vc("",1200), vc("",1200)] }),
-      new TableRow({ children: [lc("来访时间",1600), vc(visitDate,1600), lc("是否出具公函",1000), vc("□是  ☑否",1200), vc("",1200), vc("",1200)] }),
-      new TableRow({ children: [lc("商务活动内容",1600), spanCell(reason, 5, 6400)] }),
-      new TableRow({ children: [lc("发生费用",1600), spanCell("就餐地点："+(venue||"/"), 3, 3600), vc(budget?String(parseFloat(budget)*parseInt(guestCount||"1"))+"元":"/",1200), vc("",1200), vc("",1200)] }),
-    ]
-  });
+  var t0Rows = [
+    tr([tc("来客单位",{w:1200,shade:"F0F4F8"}), tc(d.guest||"",{w:2400}), tc("来访时间",{w:1200,shade:"F0F4F8"}), tc(fd(d.visit_date,"short"),{w:1600}), tc("来客人数",{w:1200,shade:"F0F4F8"}), tc(d.guest_count||"",{w:1200})]),
+    tr([tc("来访事由",{w:1200,shade:"F0F4F8"}), tc(d.reason||"",{w:13200,cs:5})]),
+    tr([tc("接待单位",{w:1200,shade:"F0F4F8"}), tc("太仓市生物医药产业园有限公司",{w:2400}), tc("陪同人员",{w:1200,shade:"F0F4F8"}), tc(d.escort||"",{w:3600,cs:3})]),
+    tr([tc("接待类别",{w:1200,shade:"F0F4F8"}), tc(meal,{w:3000,cs:3}), tc("接待标准",{w:1200,shade:"F0F4F8"}), tc((d.budget||"")+"元/人",{w:1200}), tc("",{w:1200})]),
+    tr([tc("其他事项",{w:1200,shade:"F0F4F8"}), tc("",{w:13200,cs:5})]),
+  ];
 
-  return new Document({ sections: [{
-    children: [
-      pp("商务接待审批表", 26, "1a3a5c"),
-      pp("申请人："+name+"    批准人：    申请日期："+date, 16),
-      new Paragraph({}),
-      t0,
-      new Paragraph({}),
-      pp("商务接待清单", 20, "1a3a5c"),
-      t1,
-    ]
-  }] });
+  var totalFee = (parseFloat(d.budget)||0) * (parseInt(d.guest_count)||0);
+  var t1Rows = [
+    tr([tc("负责接待单位（单位盖章）",{w:1600,shade:"F0F4F8"}), tc("太仓市生物医药产业园有限公司",{w:1600}), tc("陪同人员",{w:1000,shade:"F0F4F8"}), tc(d.escort+" 人",{w:1200}), tc("",{w:1200}), tc("",{w:1200})]),
+    tr([tc("来访单位",{w:1600,shade:"F0F4F8"}), tc(d.guest||"",{w:1600}), tc("来访人数",{w:1000,shade:"F0F4F8"}), tc((d.guest_count||"")+" 人",{w:1200}), tc("",{w:1200}), tc("",{w:1200})]),
+    tr([tc("来访时间",{w:1600,shade:"F0F4F8"}), tc(fd(d.visit_date,"short"),{w:1600}), tc("是否出具公函",{w:1000,shade:"F0F4F8"}), tc("□是  ☑否",{w:1200}), tc("",{w:1200}), tc("",{w:1200})]),
+    tr([tc("商务活动内容",{w:1600,shade:"F0F4F8"}), tc(d.reason||"",{w:6000,cs:5})]),
+    tr([tc("发生费用",{w:1600,shade:"F0F4F8"}), tc("就餐地点："+(d.venue||"/"),{w:3200,cs:3}), tc(totalFee?String(totalFee)+"元":"/",{w:1200}), tc("",{w:1200}), tc("",{w:1200})]),
+  ];
+
+  var borderB = '<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:left w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:right w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="999999"/></w:tblBorders>';
+  var t0Xml = '<w:tbl><w:tblPr><w:tblW w:w="14400" w:type="dxa"/>'+borderB+'</w:tblPr>'+t0Rows.join('')+'</w:tbl>';
+  var t1Xml = '<w:tbl><w:tblPr><w:tblW w:w="14400" w:type="dxa"/>'+borderB+'</w:tblPr>'+t1Rows.join('')+'</w:tbl>';
+
+  return buildDocx(
+    para("商务接待审批表", 26, true, "1a3a5c") +
+    para("申请人："+d.name+"    批准人：    申请日期："+fd(d.date), 16, false, "444444") +
+    '<w:p/>'+t0Xml+'<w:p/>'+
+    para("商务接待清单", 20, true, "1a3a5c") +
+    '<w:p/>'+t1Xml
+  );
 }
 
-// ─────────────────────────────────────────
-// 下载
-// ─────────────────────────────────────────
-function downloadBlob(doc, filename) {
-  return Packer.toBuffer(doc).then(function(buffer) {
-    var blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-  });
-}
+// ══════════════════════════════════════════════
+//  主函数
+// ══════════════════════════════════════════════
+function gen() {
+  var btn = document.getElementById("btn");
+  var msg = document.getElementById("msg");
+  var errEl = document.getElementById("err");
 
-async function generateDocs() {
-  if (!checkDocx()) return;
-  var btn = document.getElementById("generateBtn");
-  var result = document.getElementById("result");
-  var errBox = document.getElementById("errorMsg");
-  var loading = document.getElementById("loading");
+  msg.classList.remove("show");
+  errEl.classList.remove("show");
 
-  result.classList.remove("show");
-  errBox.classList.remove("show");
+  var name = document.getElementById("name").value.trim();
+  var dept = document.getElementById("dept").value.trim();
+  if (!name || !dept) {
+    errEl.textContent = "❌ 请填写姓名和部门";
+    errEl.classList.add("show");
+    return;
+  }
+
+  var d = {
+    name: name,
+    dept: dept,
+    date: document.getElementById("date").value,
+    reason: document.getElementById("reason").value.trim(),
+    dest: document.getElementById("dest").value.trim(),
+    participants: document.getElementById("participants").value.trim(),
+    days: document.getElementById("days").value.trim(),
+    start_date: document.getElementById("start_date").value,
+    end_date: document.getElementById("end_date").value,
+    detail: document.getElementById("detail").value.trim(),
+    amount: document.getElementById("amount").value.trim(),
+    guest: document.getElementById("guest").value.trim(),
+    guest_count: document.getElementById("guest_count").value.trim(),
+    visit_date: document.getElementById("visit_date").value,
+    escort: document.getElementById("escort").value.trim(),
+    venue: document.getElementById("venue").value.trim(),
+    budget: document.getElementById("budget").value.trim(),
+    meal: (document.querySelector('input[name="meal"]:checked')||{value:"晚餐"}).value,
+  };
+
   btn.disabled = true;
   btn.textContent = "生成中...";
-  loading.classList.add("show");
 
   try {
-    var data = {
-      name: document.getElementById("name").value.trim(),
-      dept: document.getElementById("dept").value.trim(),
-      date: document.getElementById("date").value,
-      destination: document.getElementById("destination").value.trim(),
-      start_date: document.getElementById("start_date").value,
-      end_date: document.getElementById("end_date").value,
-      participants: document.getElementById("participants").value.trim(),
-      days: document.getElementById("days").value.trim(),
-      reason: document.getElementById("reason").value.trim(),
-      amount: document.getElementById("amount").value.trim(),
-      amount_detail: document.getElementById("amount_detail").value.trim(),
-      guest_unit: document.getElementById("guest_unit").value.trim(),
-      guest_count: document.getElementById("guest_count").value.trim(),
-      visit_date: document.getElementById("visit_date").value,
-      escort: document.getElementById("escort").value.trim(),
-      venue: document.getElementById("venue").value.trim(),
-      budget: document.getElementById("budget").value.trim(),
-      meal: (document.querySelector('input[name="meal"]:checked')||{value:"晚餐"}).value,
-    };
-
-    if (!data.name) throw new Error("请填写姓名");
-    if (!data.dept) throw new Error("请填写部门");
-
-    var docs = [
-      { doc: make01(data), name: "01出差审批表.docx" },
-      { doc: make02(data), name: "02费用报销单.docx" },
-      { doc: make02(data), name: "03费用报销单.docx" },
-      { doc: make04(data), name: "04商务接待审批表.docx" },
+    var files = [
+      {name:"[Content_Types].xml", data:build01(d)[0]},
+      {name:"_rels/.rels", data:build01(d)[1]},
+      {name:"word/_rels/document.xml.rels", data:build01(d)[2]},
+      {name:"word/document.xml", data:build01(d)[3]},
     ];
+    download(zip(files), "01出差审批表.docx");
+    files = [
+      {name:"[Content_Types].xml", data:build02(d)[0]},
+      {name:"_rels/.rels", data:build02(d)[1]},
+      {name:"word/_rels/document.xml.rels", data:build02(d)[2]},
+      {name:"word/document.xml", data:build02(d)[3]},
+    ];
+    download(zip(files), "02费用报销单.docx");
+    download(zip(files), "03费用报销单.docx");
+    files = [
+      {name:"[Content_Types].xml", data:build04(d)[0]},
+      {name:"_rels/.rels", data:build04(d)[1]},
+      {name:"word/_rels/document.xml.rels", data:build04(d)[2]},
+      {name:"word/document.xml", data:build04(d)[3]},
+    ];
+    download(zip(files), "04商务接待审批表.docx");
 
-    for (var i = 0; i < docs.length; i++) {
-      await downloadBlob(docs[i].doc, docs[i].name);
-      await new Promise(function(r) { setTimeout(r, 300); });
-    }
-
-    result.classList.add("show");
-
+    msg.classList.add("show");
   } catch(e) {
-    errBox.textContent = "❌ 错误：" + e.message;
-    errBox.classList.add("show");
+    errEl.textContent = "❌ 错误：" + e.message;
+    errEl.classList.add("show");
   } finally {
     btn.disabled = false;
     btn.textContent = "🚀 生成 4 份报销文档";
-    loading.classList.remove("show");
   }
 }
+
+// 设置默认日期
+(function() {
+  var t = new Date().toISOString().split("T")[0];
+  ["date","start_date","end_date","visit_date"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = t;
+  });
+})();
 </script>
 </body>
 </html>
