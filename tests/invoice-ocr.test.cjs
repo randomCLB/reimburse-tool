@@ -87,3 +87,33 @@ test('模拟脚本加载失败后重新插入脚本并恢复手工编辑',async(
   get('invoice-file').files=[{type:'image/jpeg'}];get('invoice-file').events.change.call(get('invoice-file'));
   await click('invoice-run');await click('invoice-run');assert.equal(attempts,2);assert.equal(removed,2);assert.match(get('invoice-status').textContent,/脚本加载失败/);assert.equal(get('invoice-apply').disabled,false);
 });
+
+// Full, unedited OCR from .bridge/fixtures/browser-first-result.json.
+// Evidence: randomCLB/al-loc-workspace, commit 55d60f0,
+// results/codex-chatgpt-bridge-macos/handoffs/reimburse-ocr-001-browser-first.json.
+// Synthetic PNG SHA256: a0fddc4277eb6d780f53eca3c23c444fa67f679c92ba9255124e16eea3f0ad0c.
+const browserFirstRaw="电子 发 票 〈 普 通 发 票 )\n发 票 号 码 : 12345678901234567890\n开票 日 期 : 2026 年 10 月 17 日\n购买 方 名 称 : 测试 采购 公司\n\n纳税 人 识别 号 : TESTBUYER0000000001\n销售 方 名 称 : 示例 餐饮 有 限 公司\n\n纳税 人 识别 号 : TESTSELLER000000001\n项 目 名 称 : 餐饮 服务\n\n金额 : 100.00 ”税额 : 6.00\n\n价 税 合计 (大写 ) : 过 佰 零 陆 元 整\n\n价 税 合计 (小 写 ) : 工 106.00\n\n仅 供 软件 测试 使 用 ， 无 真实 交易\n";
+test('完整浏览器 OCR 原文回归：证据哈希及全部五个字段',()=>{
+  assert.equal(require('node:crypto').createHash('sha256').update(browserFirstRaw).digest('hex'),'c01d17cbd814cfef1e7d583b7a255c1356864f103669d83ae6b40cd03004372b');
+  const r=parseInvoice(browserFirstRaw);
+  assert.equal(r.date,'2026-10-17');assert.equal(r.amount,'106.00');
+  assert.equal(r.number,'12345678901234567890');assert.equal(r.seller,'示例餐饮有限公司');assert.equal(r.content,'餐饮服务');
+});
+test('OCR 日期分词与分隔符周围空格，不修补不存在的日期',()=>{
+  for(const date of ['2026 年 10 月 17 日','2026 - 10 - 17','2026 / 10 / 17','2026 . 10 . 17'])assert.equal(parseInvoice('开票 日 期 : '+date).date,'2026-10-17');
+  for(const date of ['2026 年 02 月 29 日','2026 年 13 月 17 日','2026 年 04 月 31 日','2026 年 10 月 00 日','2026 年 10 月 171 日'])assert.equal(parseInvoice('开票 日 期 : '+date).date,'');
+  assert.equal(parseInvoice('开票 日 期 : 2024 年 02 月 29 日').date,'2024-02-29');
+});
+test('中文大写行不否决唯一小写总额，空行和独立 OCR 噪声可保留',()=>{
+  for(const gap of ['\n','\n\n','\n \n\n']){
+    for(const lower of ['价 税 合计 (小 写 ) : 工 106.00','价 税 合计 (小 写 ) : X 106.00','(小 写 ) : 工 ￥1,234.56']){
+      const text='金额 100.00 税额 6.00\n价 税 合计 (大写 ) : 过 佰 零 陆 元 整'+gap+lower;
+      assert.equal(parseInvoice(text).amount,lower.includes('1,234')?'1234.56':'106.00');
+    }
+  }
+});
+test('分行总额缺失、负数、损坏或多候选均保留人工判断防线',()=>{
+  const upper='价 税 合计 (大写 ) : 过 佰 零 陆 元 整\n\n';
+  const invalid=['','价税合计 (小写) : 工','价税合计 (小写) : -106.00','价税合计 (小写) : - 106.00','价税合计 (小写) : −106.00','价税合计 (小写) : 10O.00','价税合计 (小写) : 106.OO','价税合计 (小写) : O106.00','价税合计 (小写) : 工106.00','价税合计 (小写) : 1,06.00','价税合计 (小写) : .106.00','价税合计 (小写) : 106.00 .','价税合计 (小写) : (小写) 106.00','价税合计 (小写) : 106.001','价税合计 (小写) : 1 06.00','价税合计 (小写) : 106.00 107.00','价税合计 (小写) : 106.00\n\n价税合计 (小写) : 107.00','价税合计 (小写) : 106.00\n价税合计 (小写) : 106.00','价税合计 (小写) : 106.00\n价税合计 (小写) :','价税合计 (小写) : 106.00\n价税合计 (小写) : 10O.00'];
+  for(const text of invalid){const r=parseInvoice(upper+text+'\n金额 100.00 税额 6.00');assert.equal(r.amount,'',text);assert.ok(r.warnings.some(s=>s.includes('金额已留空')),text);}
+});

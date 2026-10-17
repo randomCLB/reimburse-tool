@@ -35,7 +35,7 @@
     var text=String(raw||'').normalize('NFKC').replace(/\r/g,'').replace(/([\u3400-\u9fff])[^\S\n]+(?=[\u3400-\u9fff])/g,'$1');
     var result={date:'',number:'',seller:'',amount:'',content:'',warnings:[]};
     if(!text.trim()){result.warnings.push('OCR 文本为空，请重试或手工填写并核对原图');return result;}
-    var dates=Array.from(text.matchAll(/开票日期\s*[:：]?\s*(\d{4}[-年/.]\d{1,2}[-月/.]\d{1,2}日?)(?!\d)/g),m=>validDate(m[1]));
+    var dates=Array.from(text.matchAll(/开票日期\s*[:：]?\s*(\d{4}\s*[-年/.]\s*\d{1,2}\s*[-月/.]\s*\d{1,2}(?:\s*日)?)(?!\d)/g),m=>validDate(m[1].replace(/\s/g,'')));
     if(dates.length===1)result.date=dates[0];
     if(dates.length&&!result.date)result.warnings.push('开票日期无效或不唯一，请人工核对');
     var numbers=Array.from(text.matchAll(/发票(?:号码|号)\s*[:：]?\s*(\d{8,20})(?!\d)/g),m=>m[1]);
@@ -52,13 +52,23 @@
       if(!/价税合计/.test(line))return;
       if(line.split('价税合计').length!==2)invalid=true;
       var region=line.split('价税合计')[1];
-      for(var n=1;n<=2&&i+n<lines.length;n++){
-        if(/^\s*(?:\(?小写\)?\s*[:：]?|[¥￥])/.test(lines[i+n]))region+=' '+lines[i+n];else break;
+      for(var n=i+1;n<lines.length;n++){
+        if(!lines[n].trim())continue;
+        if(/^\s*(?:\(?\s*小写\s*\)?\s*[:：]?|[¥￥])/.test(lines[n]))region+=' '+lines[n];else break;
       }
       region=region.split(/税额|税率|开票日期|发票号码|销售方|购买方/)[0];
-      if(/小写/.test(region))region=region.split('小写').slice(1).join('小写');
-      if(/[A-Za-z?？%％]/.test(region))invalid=true;
+      // A Chinese-only uppercase amount is not a missing lowercase candidate.
+      if(/大写/.test(region)&&!/小写/.test(region)&&/^[\s():：\u3400-\u9fff]+$/.test(region)&&/[零壹贰叁肆伍陆柒捌玖拾佰仟万亿元角分整]/.test(region))return;
+      if(/小写/.test(region)){
+        if(region.split('小写').length>2)invalid=true;
+        region=region.split('小写').slice(1).join('小写');
+        // Ignore only standalone letter noise, never repair characters inside digits.
+        region=region.replace(/(^|\s)[A-Za-z](?=\s|$)/g,'$1');
+      }
+      if(/[A-Za-z?？%％+−–—-]/.test(region))invalid=true;
+      if(/[\u3400-\u9fff]\d|\d(?!元)[\u3400-\u9fff]/.test(region))invalid=true;
       var tokens=region.match(/[-+]?\d[\d,.]*/g)||[];
+      if(/[.,]/.test(region.replace(/[-+]?\d[\d,.]*/g,'')))invalid=true;
       if(!tokens.length)invalid=true;
       tokens.forEach(function(token){
         if(!/^(?:\d+|[1-9]\d{0,2}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(token)){invalid=true;return;}
