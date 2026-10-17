@@ -95,6 +95,16 @@
     var fieldIds=['invoice-date','invoice-number','invoice-seller','invoice-amount','invoice-content'];
     function status(message,error){$('invoice-status').textContent=message;$('invoice-status').style.color=error?'#c62828':'#666';}
     function reset(){fieldIds.forEach(id=>$(id).value='');$('invoice-raw').value='';$('invoice-reviewed').checked=false;}
+    function resetSelection(){
+      if(previewURL)URL.revokeObjectURL(previewURL);
+      previewURL='';file=null;reset();$('invoice-preview').hidden=true;$('invoice-preview').removeAttribute('src');
+      $('invoice-progress').value=0;$('invoice-run').disabled=true;$('invoice-run').textContent='开始本地识别';
+    }
+    $('invoice-clear').addEventListener('click',function(){
+      if(busy)return;
+      $('invoice-file').value='';resetSelection();
+      status('已清空本张发票。请选择图片，或直接手工核对填写；费用信息保持不变。');
+    });
     function loadScript(){
       if(root.Tesseract)return Promise.resolve();
       if(scriptPromise)return scriptPromise;
@@ -108,8 +118,7 @@
       return scriptPromise;
     }
     $('invoice-file').addEventListener('change',function(){
-      if(previewURL)URL.revokeObjectURL(previewURL);
-      previewURL='';file=null;reset();$('invoice-preview').hidden=true;$('invoice-preview').removeAttribute('src');$('invoice-run').disabled=true;
+      resetSelection();
       var files=this.files;
       if(!files.length){status('请选择单张发票图片，或直接手工核对填写');return;}
       if(files.length!==1||!['image/jpeg','image/png','image/webp'].includes(files[0].type)){status('只支持单张 JPEG、PNG 或 WebP 图片',true);return;}
@@ -127,7 +136,7 @@
     $('invoice-run').addEventListener('click',async function(){
       if(!file||busy)return;
       busy=true;reset();$('invoice-progress').value=0;
-      ['invoice-file','invoice-run','invoice-parse','invoice-apply','invoice-raw','invoice-reviewed'].concat(fieldIds).forEach(id=>$(id).disabled=true);
+      ['invoice-file','invoice-run','invoice-clear','invoice-parse','invoice-apply','invoice-raw','invoice-reviewed'].concat(fieldIds).forEach(id=>$(id).disabled=true);
       var worker=null,timer,finished=false;
       status('加载本地 OCR 引擎和中文语言包，首次使用需要联网…');
       try{
@@ -154,8 +163,8 @@
       }catch(e){status('本地识别失败：'+(e.message||String(e))+'。可点击重试或手工填写核对结果。',true);}
       finally{
         finished=true;clearTimeout(timer);if(worker)await worker.terminate();busy=false;
-        ['invoice-file','invoice-run','invoice-parse','invoice-apply','invoice-raw','invoice-reviewed'].concat(fieldIds).forEach(id=>$(id).disabled=false);
-        $('invoice-run').textContent='重试本地识别';
+        ['invoice-file','invoice-run','invoice-clear','invoice-parse','invoice-apply','invoice-raw','invoice-reviewed'].concat(fieldIds).forEach(id=>$(id).disabled=false);
+        $('invoice-run').disabled=!file;$('invoice-run').textContent='重试本地识别';
       }
     });
     fieldIds.concat(['invoice-raw']).forEach(id=>$(id).addEventListener('input',()=>{$('invoice-reviewed').checked=false;}));

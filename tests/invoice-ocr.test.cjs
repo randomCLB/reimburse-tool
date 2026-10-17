@@ -44,7 +44,11 @@ test('十进制进位与人民币大写',()=>{
 function ui(extra={}){
   const elements=new Map();
   const get=id=>{
-    if(!elements.has(id))elements.set(id,{value:'',checked:false,disabled:false,style:{},events:{},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(){}});
+    if(!elements.has(id))elements.set(id,{value:'',checked:false,disabled:false,style:{},events:{},addEventListener(name,fn){this.events[name]=fn;},removeAttribute(name){delete this[name];}});
+    if(id==='invoice-file'&&!elements.get(id).fileInputStub){
+      const el=elements.get(id);let value='';el.files=[];el.fileInputStub=true;
+      Object.defineProperty(el,'value',{get(){return value;},set(next){value=next;if(next==='')this.files=[];}});
+    }
     return elements.get(id);
   };
   const browser={document:{readyState:'complete',getElementById:get},confirm:()=>true,setTimeout,clearTimeout,...extra};
@@ -116,4 +120,70 @@ test('分行总额缺失、负数、损坏或多候选均保留人工判断防�
   const upper='价 税 合计 (大写 ) : 过 佰 零 陆 元 整\n\n';
   const invalid=['','价税合计 (小写) : 工','价税合计 (小写) : -106.00','价税合计 (小写) : - 106.00','价税合计 (小写) : −106.00','价税合计 (小写) : 10O.00','价税合计 (小写) : 106.OO','价税合计 (小写) : O106.00','价税合计 (小写) : 工106.00','价税合计 (小写) : 1,06.00','价税合计 (小写) : .106.00','价税合计 (小写) : 106.00 .','价税合计 (小写) : (小写) 106.00','价税合计 (小写) : 106.001','价税合计 (小写) : 1 06.00','价税合计 (小写) : 106.00 107.00','价税合计 (小写) : 106.00\n\n价税合计 (小写) : 107.00','价税合计 (小写) : 106.00\n价税合计 (小写) : 106.00','价税合计 (小写) : 106.00\n价税合计 (小写) :','价税合计 (小写) : 106.00\n价税合计 (小写) : 10O.00'];
   for(const text of invalid){const r=parseInvoice(upper+text+'\n金额 100.00 税额 6.00');assert.equal(r.amount,'',text);assert.ok(r.warnings.some(s=>s.includes('金额已留空')),text);}
+});
+
+// Execute the real UI handlers against DOM/File/worker doubles; no image OCR is performed.
+function selectSyntheticFile(get,file){
+  const input=get('invoice-file');input.value='C:\\fakepath\\'+file.name;input.files=[file];input.events.change.call(input);
+}
+function assertInvoiceCleared(get){
+  assert.equal(get('invoice-file').value,'');assert.equal(get('invoice-file').files.length,0);
+  assert.equal(get('invoice-preview').hidden,true);assert.equal(get('invoice-preview').src,undefined);
+  for(const id of ['invoice-raw','invoice-date','invoice-number','invoice-seller','invoice-amount','invoice-content'])assert.equal(get(id).value,'',id);
+  assert.equal(get('invoice-reviewed').checked,false);assert.equal(Number(get('invoice-progress').value),0);
+  assert.equal(get('invoice-run').disabled,true);assert.equal(get('invoice-run').textContent,'开始本地识别');
+  assert.match(get('invoice-status').textContent,/请选择/);
+}
+test('清空当前图片释放 URL，复位发票区，保留所有报销输入且不请求覆盖确认',()=>{
+  const revoked=[],created=[];
+  const {get,click}=ui({URL:{createObjectURL(file){created.push(file);return 'blob:synthetic-'+created.length;},revokeObjectURL(url){revoked.push(url);}},confirm(){assert.fail('清空不能触发覆盖确认');}});
+  const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
+  assert.ok(/<button\b[^>]*id="invoice-clear"[^>]*type="button"[^>]*>清空本张发票<\/button>/.test(html),'页面包含非提交类型的清空按钮');
+  const businessIds=Array.from(html.matchAll(/<(?:input|textarea)\b[^>]*\bid="([^"]+)"/g),m=>m[1]).filter(id=>!id.startsWith('invoice-'));
+  for(const id of businessIds)get(id).value='保留-'+id;
+  const image=new File(['synthetic PNG bytes'],'synthetic.png',{type:'image/png'});
+  selectSyntheticFile(get,image);assert.equal(get('invoice-preview').src,'blob:synthetic-1');assert.equal(get('invoice-preview').hidden,false);assert.equal(get('invoice-run').disabled,false);
+  for(const id of ['invoice-raw','invoice-date','invoice-number','invoice-seller','invoice-amount','invoice-content'])get(id).value='旧识别值';
+  get('invoice-reviewed').checked=true;get('invoice-progress').value=100;
+  click('invoice-clear');assertInvoiceCleared(get);assert.deepEqual(revoked,['blob:synthetic-1']);
+  for(const id of businessIds)assert.equal(get(id).value,'保留-'+id,id);
+  click('invoice-clear');assertInvoiceCleared(get);assert.equal(revoked.length,1,'重复清空不重复撤销 URL');
+  selectSyntheticFile(get,image);assert.equal(get('invoice-preview').src,'blob:synthetic-2');assert.equal(get('invoice-run').disabled,false);assert.equal(get('invoice-raw').value,'');
+  const other=new File(['synthetic WebP bytes'],'another.webp',{type:'image/webp'});
+  selectSyntheticFile(get,other);assert.deepEqual(revoked,['blob:synthetic-1','blob:synthetic-2']);assert.equal(get('invoice-preview').src,'blob:synthetic-3');
+  click('invoice-clear');assertInvoiceCleared(get);assert.deepEqual(revoked,['blob:synthetic-1','blob:synthetic-2','blob:synthetic-3']);
+});
+test('加载和识别 busy 时不可清空，完成后保留已确认费用并可重选原 File 重新识别',async(t)=>{
+  let finishLoad,startRecognize,finishRecognize,attempts=0;
+  const loading=new Promise(resolve=>{finishLoad=resolve;});
+  const started=new Promise(resolve=>{startRecognize=resolve;});
+  const recognizing=new Promise(resolve=>{finishRecognize=resolve;});
+  const seen=[],revoked=[];
+  const worker={recognize(file){seen.push(file);startRecognize();return seen.length===1?recognizing:Promise.resolve({data:{text:'价税合计 7.77\n项目名称：第二次合成服务'}});},async terminate(){}};
+  const {get,click}=ui({URL:{createObjectURL:()=> 'blob:busy-image',revokeObjectURL:url=>revoked.push(url)},Tesseract:{createWorker(){attempts++;return attempts===1?loading:Promise.resolve(worker);}}});
+  const image=new File(['synthetic PNG bytes'],'same.png',{type:'image/png'});
+  selectSyntheticFile(get,image);const run=click('invoice-run');
+  t.after(async()=>{finishLoad(worker);finishRecognize({data:{text:''}});await run;});
+  assert.equal(get('invoice-clear').disabled,true,'加载阶段禁用');click('invoice-clear');assert.equal(get('invoice-preview').hidden,false);assert.equal(revoked.length,0);
+  finishLoad(worker);await started;
+  assert.equal(get('invoice-clear').disabled,true,'识别阶段禁用');click('invoice-clear');assert.equal(get('invoice-file').files[0],image);
+  finishRecognize({data:{text:'价税合计 106.00\n项目名称：第一次合成服务'}});await run;
+  assert.equal(get('invoice-clear').disabled,false);assert.equal(get('invoice-amount').value,'106.00');
+  get('invoice-reviewed').checked=true;click('invoice-apply');const detail=get('detail').value;assert.equal(get('amount').value,'106.00');
+  click('invoice-clear');assertInvoiceCleared(get);assert.equal(get('amount').value,'106.00');assert.equal(get('detail').value,detail);
+  await click('invoice-run');assert.equal(seen.length,1,'清空后即使直接调用也不能识别旧文件');
+  selectSyntheticFile(get,image);assert.equal(get('invoice-raw').value,'');await click('invoice-run');
+  assert.deepEqual(seen,[image,image]);assert.equal(get('invoice-amount').value,'7.77');assert.doesNotMatch(get('invoice-raw').value,/第一次/);
+  assert.equal(get('amount').value,'106.00');assert.equal(get('detail').value,detail);assert.equal(get('invoice-clear').disabled,false);
+});
+test('识别失败后恢复清空能力，清空错误后重新选图可重试',async()=>{
+  let attempts=0;const revoked=[];
+  const {get,click}=ui({URL:{createObjectURL:()=> 'blob:retry-image',revokeObjectURL:url=>revoked.push(url)},Tesseract:{async createWorker(){
+    return {async recognize(){if(++attempts===1)throw Error('synthetic recognition failure');return {data:{text:'价税合计 0.00\n项目名称：合成免费服务'}};},async terminate(){}};
+  }}});
+  const image=new File(['synthetic JPEG bytes'],'retry.jpeg',{type:'image/jpeg'});
+  selectSyntheticFile(get,image);await click('invoice-run');assert.match(get('invoice-status').textContent,/识别失败/);assert.equal(get('invoice-clear').disabled,false);
+  click('invoice-clear');assertInvoiceCleared(get);assert.deepEqual(revoked,['blob:retry-image']);
+  selectSyntheticFile(get,image);await click('invoice-run');assert.equal(get('invoice-amount').value,'0.00');assert.equal(get('invoice-clear').disabled,false);
+  click('invoice-clear');assertInvoiceCleared(get);
 });
